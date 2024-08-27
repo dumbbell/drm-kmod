@@ -1418,6 +1418,10 @@ int amdgpu_driver_open_kms(struct drm_device *dev, struct drm_file *file_priv)
 	idr_init(&fpriv->bo_list_handles);
 #endif
 
+	r = amdgpu_eviction_fence_init(&fpriv->evf_mgr);
+	if (r)
+		goto error_vm;
+
 	amdgpu_ctx_mgr_init(&fpriv->ctx_mgr, adev);
 
 	r = amdgpu_userq_mgr_init(&fpriv->userq_mgr, adev);
@@ -1491,6 +1495,7 @@ void amdgpu_driver_postclose_kms(struct drm_device *dev,
 		amdgpu_bo_unreserve(pd);
 	}
 
+	amdgpu_eviction_fence_destroy(&fpriv->evf_mgr);
 	amdgpu_ctx_mgr_fini(&fpriv->ctx_mgr);
 	amdgpu_vm_fini(adev, &fpriv->vm);
 	amdgpu_userq_mgr_fini(&fpriv->userq_mgr);
