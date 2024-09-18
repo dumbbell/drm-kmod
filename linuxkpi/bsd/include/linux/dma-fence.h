@@ -74,9 +74,6 @@ struct dma_fence_ops {
 	signed long (*wait)(struct dma_fence *fence,
 			    bool intr, signed long timeout);
 	void (*release)(struct dma_fence *fence);
-	void (*fence_value_str)(struct dma_fence *fence, char *str, int size);
-	void (*timeline_value_str)(struct dma_fence *fence,
-				   char *str, int size);
 	void (*set_deadline)(struct dma_fence *fence, ktime_t deadline);
 };
 
