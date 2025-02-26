@@ -40,6 +40,7 @@
 #include <linux/xarray.h>
 
 #include <drm/drm_accel.h>
+#include <drm/drm_bridge.h>
 #include <drm/drm_cache.h>
 #include <drm/drm_client_event.h>
 #include <drm/drm_color_mgmt.h>
@@ -1204,9 +1205,7 @@ static void drm_core_exit(void)
 	drm_panic_exit();
 	accel_core_exit();
 	unregister_chrdev(DRM_MAJOR, "drm");
-#ifdef CONFIG_DEBUG_FS
 	debugfs_remove(drm_debugfs_root);
-#endif
 	drm_sysfs_destroy();
 	WARN_ON(!xa_empty(&drm_minors_xa));
 	drm_connector_ida_destroy();
@@ -1225,9 +1224,8 @@ static int __init drm_core_init(void)
 		goto error;
 	}
 
-#ifdef CONFIG_DEBUG_FS
 	drm_debugfs_root = debugfs_create_dir("dri", NULL);
-#endif
+	drm_bridge_debugfs_params(drm_debugfs_root);
 
 #ifdef __linux__
 	ret = register_chrdev(DRM_MAJOR, "drm", &drm_stub_fops);
