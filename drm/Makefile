@@ -197,6 +197,7 @@ CWARNFLAGS+=-Wno-cast-qual
 CWARNFLAGS+=	-Wno-format -Wno-gnu-pointer-arith
 
 CWARNFLAGS.drm_blend.c+=			-Wno-cast-qual
+CWARNFLAGS.drm_client_modeset.c+=		-Wno-cast-qual
 CWARNFLAGS.drm_dp_helper.c+=			-Wno-unused-const-variable
 CWARNFLAGS.drm_dp_mst_topology.c+=		-Wno-missing-prototypes
 CWARNFLAGS.drm_dp_tunnel.c+=			-Wno-incompatible-pointer-types-discards-qualifiers
