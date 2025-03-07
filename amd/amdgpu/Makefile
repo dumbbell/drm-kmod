@@ -1009,7 +1009,6 @@ SRCS+=	display_mode_core.c \
 	dml2_core_factory.c \
 	dml2_core_dcn4_calcs.c \
 	dml2_dc_resource_mgmt.c \
-	dml2_debug.c \
 	dml2_dpmm_dcn4.c \
 	dml2_dpmm_factory.c \
 	dml2_mall_phantom.c \
