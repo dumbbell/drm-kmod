@@ -19,6 +19,8 @@ void intel_gmch_gtt_insert_sg_entries(struct sg_table *, unsigned int,
     unsigned int);
 void intel_gmch_gtt_insert_page(dma_addr_t, unsigned int, unsigned int);
 void intel_gmch_gtt_clear_range(unsigned int, unsigned int);
+dma_addr_t intel_gmch_gtt_read_entry(unsigned int pg,
+    bool *is_present, bool *is_local);
 void intel_gmch_remove(void);
 
 #endif
