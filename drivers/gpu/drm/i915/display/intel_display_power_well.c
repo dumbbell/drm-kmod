@@ -1236,8 +1236,8 @@ static void vlv_display_power_well_init(struct intel_display *display)
 	if (display->power.domains.initializing)
 		return;
 
-	intel_hpd_init(dev_priv);
-	intel_hpd_poll_disable(dev_priv);
+	intel_hpd_init(display);
+	intel_hpd_poll_disable(display);
 
 	/* Re-enable the ADPA, if we have one */
 	for_each_intel_encoder(display->drm, encoder) {
@@ -1265,9 +1265,9 @@ static void vlv_display_power_well_deinit(struct intel_display *display)
 
 	/* Prevent us from re-enabling polling on accident in late suspend */
 #ifdef __linux__
-	// BSDFIXME: No dev->power on BSD. Do we need run intel_hpd_poll_enbl?
+	// BSDFIXME: No dev->power on BSD. Do we need run intel_hpd_poll_enable?
 	if (!display->drm->dev->power.is_suspended)
-		intel_hpd_poll_enable(dev_priv);
+		intel_hpd_poll_enable(display);
 #endif
 }
 
