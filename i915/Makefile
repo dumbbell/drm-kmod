@@ -68,9 +68,6 @@ SRCS=	\
 	intel_crtc.c \
 	intel_cursor.c \
 	intel_device_info.c \
-	intel_display.c \
-	intel_display_power.c \
-	intel_display_snapshot.c \
 	intel_dmc.c \
 	intel_dmc_wl.c \
 	intel_dpio_phy.c \
@@ -123,15 +120,19 @@ SRCS+=	dvo_ch7017.c \
 	intel_cx0_phy.c \
 	intel_ddi.c \
 	intel_ddi_buf_trans.c \
+	intel_display.c \
 	intel_display_conversion.c \
 	intel_display_device.c \
 	intel_display_driver.c \
 	intel_display_irq.c \
 	intel_display_params.c \
+	intel_display_power.c \
 	intel_display_power_map.c \
 	intel_display_power_well.c \
 	intel_display_reset.c \
+	intel_display_rpm.c \
 	intel_display_rps.c \
+	intel_display_snapshot.c \
 	intel_display_wa.c \
 	intel_dkl_phy.c \
 	intel_dp.c \
