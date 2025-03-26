@@ -8102,6 +8102,9 @@ retry:
 			goto out;
 		}
 
+		if (!crtc_state->hw.active)
+			crtc_state->inherited = false;
+
 		if (crtc_state->hw.active) {
 			struct intel_encoder *encoder;
 
