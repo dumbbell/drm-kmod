@@ -108,6 +108,7 @@ void mipi_dsi_generic_write_multi(struct mipi_dsi_multi_context *,
     const void *, size_t);
 ssize_t mipi_dsi_generic_read(struct mipi_dsi_device *,
     const void *, size_t, void *, size_t);
+u32 drm_mipi_dsi_get_input_bus_fmt(enum mipi_dsi_pixel_format dsi_format);
 
 ssize_t mipi_dsi_dcs_write_buffer(struct mipi_dsi_device *,
     const void *, size_t);
