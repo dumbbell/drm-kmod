@@ -695,7 +695,7 @@ SRCS+=	dce120_hwseq.c \
 	dce120_timing_generator.c
 
 # display/dc/dce60
-SRCS+=	dce60_hw_sequencer.c \
+SRCS+=	dce60_hwseq.c \
 	dce60_resource.c \
 	dce60_timing_generator.c
 
