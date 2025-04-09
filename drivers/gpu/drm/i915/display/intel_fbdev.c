@@ -47,9 +47,9 @@
 #include <drm/drm_managed.h>
 #include <drm/drm_print.h>
 
-#include "i915_drv.h"
 #include "i915_vma.h"
 #include "intel_bo.h"
+#include "intel_display_core.h"
 #include "intel_display_rpm.h"
 #include "intel_display_types.h"
 #include "intel_fb.h"
@@ -66,9 +66,9 @@ struct intel_fbdev {
 
 static struct intel_fbdev *to_intel_fbdev(struct drm_fb_helper *fb_helper)
 {
-	struct drm_i915_private *i915 = to_i915(fb_helper->client.dev);
+	struct intel_display *display = to_intel_display(fb_helper->client.dev);
 
-	return i915->display.fbdev.fbdev;
+	return display->fbdev.fbdev;
 }
 
 static struct intel_frontbuffer *to_frontbuffer(struct intel_fbdev *ifbdev)
@@ -217,11 +217,9 @@ static const struct drm_fb_helper_funcs intel_fb_helper_funcs = {
 int intel_fbdev_driver_fbdev_probe(struct drm_fb_helper *helper,
 				   struct drm_fb_helper_surface_size *sizes)
 {
+	struct intel_display *display = to_intel_display(helper->dev);
 	struct intel_fbdev *ifbdev = to_intel_fbdev(helper);
 	struct intel_framebuffer *fb = ifbdev->fb;
-	struct drm_device *dev = helper->dev;
-	struct drm_i915_private *dev_priv = to_i915(dev);
-	struct intel_display *display = to_intel_display(dev);
 	struct ref_tracker *wakeref;
 	struct fb_info *info;
 	struct i915_vma *vma;
@@ -235,7 +233,7 @@ int intel_fbdev_driver_fbdev_probe(struct drm_fb_helper *helper,
 	if (fb &&
 	    (sizes->fb_width > fb->base.width ||
 	     sizes->fb_height > fb->base.height)) {
-		drm_dbg_kms(&dev_priv->drm,
+		drm_dbg_kms(display->drm,
 			    "BIOS fb too small (%dx%d), we require (%dx%d),"
 			    " releasing it\n",
 			    fb->base.width, fb->base.height,
@@ -243,14 +241,14 @@ int intel_fbdev_driver_fbdev_probe(struct drm_fb_helper *helper,
 		drm_framebuffer_put(&fb->base);
 		fb = NULL;
 	}
-	if (!fb || drm_WARN_ON(dev, !intel_fb_bo(&fb->base))) {
-		drm_dbg_kms(&dev_priv->drm,
+	if (!fb || drm_WARN_ON(display->drm, !intel_fb_bo(&fb->base))) {
+		drm_dbg_kms(display->drm,
 			    "no BIOS fb, allocating a new one\n");
 		fb = intel_fbdev_fb_alloc(helper, sizes);
 		if (IS_ERR(fb))
 			return PTR_ERR(fb);
 	} else {
-		drm_dbg_kms(&dev_priv->drm, "re-using BIOS fb\n");
+		drm_dbg_kms(display->drm, "re-using BIOS fb\n");
 		prealloc = true;
 		sizes->fb_width = fb->base.width;
 		sizes->fb_height = fb->base.height;
@@ -274,7 +272,7 @@ int intel_fbdev_driver_fbdev_probe(struct drm_fb_helper *helper,
 
 	info = drm_fb_helper_alloc_info(helper);
 	if (IS_ERR(info)) {
-		drm_err(&dev_priv->drm, "Failed to allocate fb_info (%pe)\n", info);
+		drm_err(display->drm, "Failed to allocate fb_info (%pe)\n", info);
 		ret = PTR_ERR(info);
 		goto out_unpin;
 	}
@@ -286,7 +284,7 @@ int intel_fbdev_driver_fbdev_probe(struct drm_fb_helper *helper,
 
 	obj = intel_fb_bo(&fb->base);
 
-	ret = intel_fbdev_fb_fill_info(dev_priv, info, obj, vma);
+	ret = intel_fbdev_fb_fill_info(display, info, obj, vma);
 	if (ret)
 		goto out_unpin;
 
@@ -304,10 +302,10 @@ int intel_fbdev_driver_fbdev_probe(struct drm_fb_helper *helper,
 	 * values passed to register_fictitious_range() below are unavailable
 	 * from a generic structure set by both drivers.
 	 */
-	register_fictitious_range(dev, info->fix.smem_start, info->fix.smem_len);
+	register_fictitious_range(helper->dev, info->fix.smem_start, info->fix.smem_len);
 #endif
 
-	drm_fb_helper_fill_info(info, dev->fb_helper, sizes);
+	drm_fb_helper_fill_info(info, display->drm->fb_helper, sizes);
 
 	/* If the object is shmemfs backed, it will have given us zeroed pages.
 	 * If the object is stolen however, it will be full of whatever
@@ -318,7 +316,7 @@ int intel_fbdev_driver_fbdev_probe(struct drm_fb_helper *helper,
 
 	/* Use default scratch pixmap (info->pixmap.flags = FB_PIXMAP_SYSTEM) */
 
-	drm_dbg_kms(&dev_priv->drm, "allocated %dx%d fb: 0x%08x\n",
+	drm_dbg_kms(display->drm, "allocated %dx%d fb: 0x%08x\n",
 		    fb->base.width, fb->base.height,
 		    i915_ggtt_offset(vma));
 	ifbdev->fb = fb;
@@ -346,16 +344,15 @@ out_unlock:
  * Note we only support a single fb shared across pipes for boot (mostly for
  * fbcon), so we just find the biggest and use that.
  */
-static bool intel_fbdev_init_bios(struct drm_device *dev,
+static bool intel_fbdev_init_bios(struct intel_display *display,
 				  struct intel_fbdev *ifbdev)
 {
-	struct drm_i915_private *i915 = to_i915(dev);
 	struct intel_framebuffer *fb = NULL;
 	struct intel_crtc *crtc;
 	unsigned int max_size = 0;
 
 	/* Find the largest fb */
-	for_each_intel_crtc(dev, crtc) {
+	for_each_intel_crtc(display->drm, crtc) {
 		struct intel_crtc_state *crtc_state =
 			to_intel_crtc_state(crtc->base.state);
 		struct intel_plane *plane =
@@ -365,21 +362,21 @@ static bool intel_fbdev_init_bios(struct drm_device *dev,
 		struct drm_gem_object *obj = intel_fb_bo(plane_state->uapi.fb);
 
 		if (!crtc_state->uapi.active) {
-			drm_dbg_kms(&i915->drm,
+			drm_dbg_kms(display->drm,
 				    "[CRTC:%d:%s] not active, skipping\n",
 				    crtc->base.base.id, crtc->base.name);
 			continue;
 		}
 
 		if (!obj) {
-			drm_dbg_kms(&i915->drm,
+			drm_dbg_kms(display->drm,
 				    "[PLANE:%d:%s] no fb, skipping\n",
 				    plane->base.base.id, plane->base.name);
 			continue;
 		}
 
 		if (obj->size > max_size) {
-			drm_dbg_kms(&i915->drm,
+			drm_dbg_kms(display->drm,
 				    "found possible fb from [PLANE:%d:%s]\n",
 				    plane->base.base.id, plane->base.name);
 			fb = to_intel_framebuffer(plane_state->uapi.fb);
@@ -388,13 +385,13 @@ static bool intel_fbdev_init_bios(struct drm_device *dev,
 	}
 
 	if (!fb) {
-		drm_dbg_kms(&i915->drm,
+		drm_dbg_kms(display->drm,
 			    "no active fbs found, not using BIOS config\n");
 		goto out;
 	}
 
 	/* Now make sure all the pipes will fit into it */
-	for_each_intel_crtc(dev, crtc) {
+	for_each_intel_crtc(display->drm, crtc) {
 		struct intel_crtc_state *crtc_state =
 			to_intel_crtc_state(crtc->base.state);
 		struct intel_plane *plane =
@@ -402,13 +399,13 @@ static bool intel_fbdev_init_bios(struct drm_device *dev,
 		unsigned int cur_size;
 
 		if (!crtc_state->uapi.active) {
-			drm_dbg_kms(&i915->drm,
+			drm_dbg_kms(display->drm,
 				    "[CRTC:%d:%s] not active, skipping\n",
 				    crtc->base.base.id, crtc->base.name);
 			continue;
 		}
 
-		drm_dbg_kms(&i915->drm, "checking [PLANE:%d:%s] for BIOS fb\n",
+		drm_dbg_kms(display->drm, "checking [PLANE:%d:%s] for BIOS fb\n",
 			    plane->base.base.id, plane->base.name);
 
 		/*
@@ -419,7 +416,7 @@ static bool intel_fbdev_init_bios(struct drm_device *dev,
 		cur_size = crtc_state->uapi.adjusted_mode.crtc_hdisplay;
 		cur_size = cur_size * fb->base.format->cpp[0];
 		if (fb->base.pitches[0] < cur_size) {
-			drm_dbg_kms(&i915->drm,
+			drm_dbg_kms(display->drm,
 				    "fb not wide enough for [PLANE:%d:%s] (%d vs %d)\n",
 				    plane->base.base.id, plane->base.name,
 				    cur_size, fb->base.pitches[0]);
@@ -430,7 +427,7 @@ static bool intel_fbdev_init_bios(struct drm_device *dev,
 		cur_size = crtc_state->uapi.adjusted_mode.crtc_vdisplay;
 		cur_size = intel_fb_align_height(&fb->base, 0, cur_size);
 		cur_size *= fb->base.pitches[0];
-		drm_dbg_kms(&i915->drm,
+		drm_dbg_kms(display->drm,
 			    "[CRTC:%d:%s] area: %dx%d, bpp: %d, size: %d\n",
 			    crtc->base.base.id, crtc->base.name,
 			    crtc_state->uapi.adjusted_mode.crtc_hdisplay,
@@ -439,7 +436,7 @@ static bool intel_fbdev_init_bios(struct drm_device *dev,
 			    cur_size);
 
 		if (cur_size > max_size) {
-			drm_dbg_kms(&i915->drm,
+			drm_dbg_kms(display->drm,
 				    "fb not big enough for [PLANE:%d:%s] (%d vs %d)\n",
 				    plane->base.base.id, plane->base.name,
 				    cur_size, max_size);
@@ -447,14 +444,14 @@ static bool intel_fbdev_init_bios(struct drm_device *dev,
 			break;
 		}
 
-		drm_dbg_kms(&i915->drm,
+		drm_dbg_kms(display->drm,
 			    "fb big enough [PLANE:%d:%s] (%d >= %d)\n",
 			    plane->base.base.id, plane->base.name,
 			    max_size, cur_size);
 	}
 
 	if (!fb) {
-		drm_dbg_kms(&i915->drm,
+		drm_dbg_kms(display->drm,
 			    "BIOS fb not suitable for all pipes, not using\n");
 		goto out;
 	}
@@ -464,7 +461,7 @@ static bool intel_fbdev_init_bios(struct drm_device *dev,
 	drm_framebuffer_get(&ifbdev->fb->base);
 
 	/* Final pass to check if any active pipes don't have fbs */
-	for_each_intel_crtc(dev, crtc) {
+	for_each_intel_crtc(display->drm, crtc) {
 		struct intel_crtc_state *crtc_state =
 			to_intel_crtc_state(crtc->base.state);
 		struct intel_plane *plane =
@@ -475,13 +472,13 @@ static bool intel_fbdev_init_bios(struct drm_device *dev,
 		if (!crtc_state->uapi.active)
 			continue;
 
-		drm_WARN(dev, !plane_state->uapi.fb,
+		drm_WARN(display->drm, !plane_state->uapi.fb,
 			 "re-used BIOS config but lost an fb on [PLANE:%d:%s]\n",
 			 plane->base.base.id, plane->base.name);
 	}
 
 
-	drm_dbg_kms(&i915->drm, "using BIOS fb for initial console\n");
+	drm_dbg_kms(display->drm, "using BIOS fb for initial console\n");
 	return true;
 
 out:
@@ -506,26 +503,25 @@ static unsigned int intel_fbdev_color_mode(const struct drm_format_info *info)
 	}
 }
 
-void intel_fbdev_setup(struct drm_i915_private *i915)
+void intel_fbdev_setup(struct intel_display *display)
 {
-	struct drm_device *dev = &i915->drm;
 	struct intel_fbdev *ifbdev;
 	unsigned int preferred_bpp = 0;
 
-	if (!HAS_DISPLAY(i915))
+	if (!HAS_DISPLAY(display))
 		return;
 
-	ifbdev = drmm_kzalloc(dev, sizeof(*ifbdev), GFP_KERNEL);
+	ifbdev = drmm_kzalloc(display->drm, sizeof(*ifbdev), GFP_KERNEL);
 	if (!ifbdev)
 		return;
 
-	i915->display.fbdev.fbdev = ifbdev;
-	if (intel_fbdev_init_bios(dev, ifbdev))
+	display->fbdev.fbdev = ifbdev;
+	if (intel_fbdev_init_bios(display, ifbdev))
 		preferred_bpp = intel_fbdev_color_mode(ifbdev->fb->base.format);
 	if (!preferred_bpp)
 		preferred_bpp = 32;
 
-	drm_client_setup_with_color_mode(dev, preferred_bpp);
+	drm_client_setup_with_color_mode(display->drm, preferred_bpp);
 }
 
 struct intel_framebuffer *intel_fbdev_framebuffer(struct intel_fbdev *fbdev)
