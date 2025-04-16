@@ -763,11 +763,15 @@ void amdgpu_userq_mgr_fini(struct amdgpu_userq_mgr *userq_mgr)
 
 int amdgpu_userq_suspend(struct amdgpu_device *adev)
 {
+	u32 ip_mask = amdgpu_userqueue_get_supported_ip_mask(adev);
 	const struct amdgpu_userq_funcs *userq_funcs;
 	struct amdgpu_usermode_queue *queue;
 	struct amdgpu_userq_mgr *uqm, *tmp;
 	int queue_id;
 	int ret = 0;
+
+	if (!ip_mask)
+		return 0;
 
 	mutex_lock(&adev->userq_mutex);
 	list_for_each_entry_safe(uqm, tmp, &adev->userq_mgr_list, list) {
@@ -783,11 +787,15 @@ int amdgpu_userq_suspend(struct amdgpu_device *adev)
 
 int amdgpu_userq_resume(struct amdgpu_device *adev)
 {
+	u32 ip_mask = amdgpu_userqueue_get_supported_ip_mask(adev);
 	const struct amdgpu_userq_funcs *userq_funcs;
 	struct amdgpu_usermode_queue *queue;
 	struct amdgpu_userq_mgr *uqm, *tmp;
 	int queue_id;
 	int ret = 0;
+
+	if (!ip_mask)
+		return 0;
 
 	mutex_lock(&adev->userq_mutex);
 	list_for_each_entry_safe(uqm, tmp, &adev->userq_mgr_list, list) {
@@ -803,11 +811,16 @@ int amdgpu_userq_resume(struct amdgpu_device *adev)
 int amdgpu_userq_stop_sched_for_enforce_isolation(struct amdgpu_device *adev,
 						  u32 idx)
 {
+	u32 ip_mask = amdgpu_userqueue_get_supported_ip_mask(adev);
 	const struct amdgpu_userq_funcs *userq_funcs;
 	struct amdgpu_usermode_queue *queue;
 	struct amdgpu_userq_mgr *uqm, *tmp;
 	int queue_id;
 	int ret = 0;
+
+	/* only need to stop gfx/compute */
+	if (!(ip_mask & ((1 << AMDGPU_HW_IP_GFX) | (1 << AMDGPU_HW_IP_COMPUTE))))
+		return 0;
 
 	mutex_lock(&adev->userq_mutex);
 	if (adev->userq_halt_for_enforce_isolation)
@@ -831,11 +844,16 @@ int amdgpu_userq_stop_sched_for_enforce_isolation(struct amdgpu_device *adev,
 int amdgpu_userq_start_sched_for_enforce_isolation(struct amdgpu_device *adev,
 						   u32 idx)
 {
+	u32 ip_mask = amdgpu_userqueue_get_supported_ip_mask(adev);
 	const struct amdgpu_userq_funcs *userq_funcs;
 	struct amdgpu_usermode_queue *queue;
 	struct amdgpu_userq_mgr *uqm, *tmp;
 	int queue_id;
 	int ret = 0;
+
+	/* only need to stop gfx/compute */
+	if (!(ip_mask & ((1 << AMDGPU_HW_IP_GFX) | (1 << AMDGPU_HW_IP_COMPUTE))))
+		return 0;
 
 	mutex_lock(&adev->userq_mutex);
 	if (!adev->userq_halt_for_enforce_isolation)
