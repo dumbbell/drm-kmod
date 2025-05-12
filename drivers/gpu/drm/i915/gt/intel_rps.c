@@ -23,7 +23,7 @@
 #include "intel_mchbar_regs.h"
 #include "intel_pcode.h"
 #include "intel_rps.h"
-#include "vlv_sideband.h"
+#include "vlv_iosf_sb.h"
 #ifdef __linux__
 #include "../../../platform/x86/intel_ips.h"
 #endif

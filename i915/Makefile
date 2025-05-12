@@ -97,7 +97,7 @@ SRCS=	\
 	intel_uncore_trace.c \
 	i915_utils.c \
 	intel_wakeref.c \
-	vlv_sideband.c \
+	vlv_iosf_sb.c \
 	vlv_suspend.c
 
 # display/*
