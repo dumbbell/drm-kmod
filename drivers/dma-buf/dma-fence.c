@@ -590,10 +590,10 @@ dma_fence_is_signaled(struct dma_fence *fence)
  * return if f1 is chronologically later than f2
  */
 bool
-__dma_fence_is_later(u64 f1, u64 f2, const struct dma_fence_ops *ops)
+__dma_fence_is_later(struct dma_fence *fence, u64 f1, u64 f2)
 {
 
-	if (ops->use_64bit_seqno)
+	if (fence->ops->use_64bit_seqno)
 		return (f1 > f2);
 
 	return (int)(lower_32_bits(f1) - lower_32_bits(f2)) > 0;
@@ -610,7 +610,7 @@ dma_fence_is_later(struct dma_fence *f1,
 	if (WARN_ON(f1->context != f2->context))
 		return (false);
 
-	return (__dma_fence_is_later(f1->seqno, f2->seqno, f1->ops));
+	return (__dma_fence_is_later(f1, f1->seqno, f2->seqno));
 }
 
 bool

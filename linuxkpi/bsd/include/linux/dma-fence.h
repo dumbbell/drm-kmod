@@ -119,8 +119,7 @@ struct dma_fence *dma_fence_get_rcu(struct dma_fence *fence);
 struct dma_fence *dma_fence_get_rcu_safe(struct dma_fence __rcu **fencep);
 bool dma_fence_is_signaled_locked(struct dma_fence *fence);
 bool dma_fence_is_signaled(struct dma_fence *fence);
-bool __dma_fence_is_later(uint64_t f1, uint64_t f2,
-    const struct dma_fence_ops *ops);
+bool __dma_fence_is_later(struct dma_fence *fence, uint64_t f1, uint64_t f2);
 bool dma_fence_is_later(struct dma_fence *f1, struct dma_fence *f2);
 bool dma_fence_is_later_or_same(struct dma_fence *f1, struct dma_fence *f2);
 struct dma_fence *dma_fence_later(struct dma_fence *f1, struct dma_fence *f2);

@@ -178,7 +178,7 @@ dma_fence_chain_init(struct dma_fence_chain *chain,
 	rcu_assign_pointer(chain->prev, prev);
 	prev_chain = to_dma_fence_chain(prev);
 	if (prev_chain != NULL &&
-	    __dma_fence_is_later(seqno, prev->seqno, prev->ops)) {
+	    __dma_fence_is_later(prev, seqno, prev->seqno)) {
 		chain->prev_seqno = prev->seqno;
 		context = prev->context;
 	} else {
