@@ -472,12 +472,9 @@ dma_fence_describe(struct dma_fence *fence, struct seq_file *seq)
 		   dma_fence_is_signaled(fence) ? "" : "un");
 }
 
-/*
- * Initialize a custom fence.
- */
-void
-dma_fence_init(struct dma_fence *fence, const struct dma_fence_ops *ops,
-    spinlock_t *lock, u64 context, u64 seqno)
+static void
+__dma_fence_init(struct dma_fence *fence, const struct dma_fence_ops *ops,
+    spinlock_t *lock, u64 context, u64 seqno, unsigned long flags)
 {
 
 	kref_init(&fence->refcount);
@@ -486,8 +483,28 @@ dma_fence_init(struct dma_fence *fence, const struct dma_fence_ops *ops,
 	fence->lock = lock;
 	fence->context = context;
 	fence->seqno = seqno;
-	fence->flags = 0;
+	fence->flags = flags;
 	fence->error = 0;
+}
+
+/*
+ * Initialize a custom fence.
+ */
+void
+dma_fence_init(struct dma_fence *fence, const struct dma_fence_ops *ops,
+    spinlock_t *lock, u64 context, u64 seqno)
+{
+
+	__dma_fence_init(fence, ops, lock, context, seqno, 0UL);
+}
+
+void
+dma_fence_init64(struct dma_fence *fence, const struct dma_fence_ops *ops,
+    spinlock_t *lock, u64 context, u64 seqno)
+{
+
+	__dma_fence_init(fence, ops, lock, context, seqno,
+	    BIT(DMA_FENCE_FLAG_SEQNO64_BIT));
 }
 
 /*
@@ -593,7 +610,7 @@ bool
 __dma_fence_is_later(struct dma_fence *fence, u64 f1, u64 f2)
 {
 
-	if (fence->ops->use_64bit_seqno)
+	if (test_bit(DMA_FENCE_FLAG_SEQNO64_BIT, &fence->flags))
 		return (f1 > f2);
 
 	return (int)(lower_32_bits(f1) - lower_32_bits(f2)) > 0;

@@ -149,7 +149,6 @@ dma_fence_chain_set_deadline(struct dma_fence *fence, ktime_t deadline)
 }
 
 const struct dma_fence_ops dma_fence_chain_ops = {
-	.use_64bit_seqno = true,
 	.get_driver_name = dma_fence_chain_get_driver_name,
 	.get_timeline_name = dma_fence_chain_get_timeline_name,
 	.enable_signaling = dma_fence_chain_enable_signaling,
@@ -187,7 +186,7 @@ dma_fence_chain_init(struct dma_fence_chain *chain,
 		context = dma_fence_context_alloc(1);
 	}
 
-	dma_fence_init(&chain->base, &dma_fence_chain_ops,
+	dma_fence_init64(&chain->base, &dma_fence_chain_ops,
 	    &chain->lock, context, seqno);
 }
 

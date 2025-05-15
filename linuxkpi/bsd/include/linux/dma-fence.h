@@ -66,8 +66,6 @@ struct dma_fence_cb {
 };
 
 struct dma_fence_ops {
-	bool use_64bit_seqno;
-
 	const char * (*get_driver_name)(struct dma_fence *fence);
 	const char * (*get_timeline_name)(struct dma_fence *fence);
 	bool (*enable_signaling)(struct dma_fence *fence);
@@ -79,6 +77,7 @@ struct dma_fence_ops {
 };
 
 enum dma_fence_flag_bits {
+	DMA_FENCE_FLAG_SEQNO64_BIT,
 	DMA_FENCE_FLAG_SIGNALED_BIT,
 	DMA_FENCE_FLAG_TIMESTAMP_BIT,
 	DMA_FENCE_FLAG_ENABLE_SIGNAL_BIT,
@@ -89,6 +88,8 @@ extern const struct dma_fence_ops dma_fence_array_ops;
 extern const struct dma_fence_ops dma_fence_chain_ops;
 
 void dma_fence_init(struct dma_fence *fence, const struct dma_fence_ops *ops,
+    spinlock_t *lock, u64 context, u64 seqno);
+void dma_fence_init64(struct dma_fence *fence, const struct dma_fence_ops *ops,
     spinlock_t *lock, u64 context, u64 seqno);
 void dma_fence_release(struct kref *kref);
 void dma_fence_free(struct dma_fence *fence);
