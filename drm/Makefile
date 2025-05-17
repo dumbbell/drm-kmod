@@ -95,6 +95,14 @@ SRCS+=	\
 	drm_debugfs_crc.c
 .endif
 
+.if !empty(KCONFIG:MDRM_DISPLAY_HDMI_CEC_HELPER)
+SRCS+=	drm_hdmi_cec_helper.c
+.endif
+
+.if !empty(KCONFIG:MDRM_DISPLAY_HDMI_CEC_NOTIFIER_HELPER)
+SRCS+=	drm_hdmi_cec_notifier_helper.c
+.endif
+
 .if !empty(KCONFIG:MDRM_MIPI_DSI)
 SRCS+=	drm_mipi_dsi.c
 .endif
