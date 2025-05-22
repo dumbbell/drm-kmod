@@ -496,6 +496,21 @@ bool drm_is_panel_follower(struct device *dev)
 }
 EXPORT_SYMBOL(drm_is_panel_follower);
 
+static struct drm_panel *of_find_panel(struct device *follower_dev)
+{
+	struct device_node *panel_np;
+	struct drm_panel *panel;
+
+	panel_np = of_parse_phandle(follower_dev->of_node, "panel", 0);
+	if (!panel_np)
+		return ERR_PTR(-ENODEV);
+
+	panel = of_drm_find_panel(panel_np);
+	of_node_put(panel_np);
+
+	return panel;
+}
+
 /**
  * drm_panel_add_follower() - Register something to follow panel state.
  * @follower_dev: The 'struct device' for the follower.
@@ -519,16 +534,10 @@ EXPORT_SYMBOL(drm_is_panel_follower);
 int drm_panel_add_follower(struct device *follower_dev,
 			   struct drm_panel_follower *follower)
 {
-	struct device_node *panel_np;
 	struct drm_panel *panel;
 	int ret;
 
-	panel_np = of_parse_phandle(follower_dev->of_node, "panel", 0);
-	if (!panel_np)
-		return -ENODEV;
-
-	panel = of_drm_find_panel(panel_np);
-	of_node_put(panel_np);
+	panel = of_find_panel(follower_dev);
 	if (IS_ERR(panel))
 		return PTR_ERR(panel);
 
