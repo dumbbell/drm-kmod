@@ -730,8 +730,8 @@ ret:
 static const struct bin_attribute data_attr = {
 	.attr = {.name = "hdcp_srm", .mode = 0664},
 	.size = PSP_HDCP_SRM_FIRST_GEN_MAX_SIZE, /* Limit SRM size */
-	.write_new = srm_data_write,
-	.read_new = srm_data_read,
+	.write = srm_data_write,
+	.read = srm_data_read,
 };
 #endif
 
