@@ -38,6 +38,7 @@
 #include <linux/timekeeping.h>
 
 struct dma_fence_ops;
+struct seq_file;
 
 struct dma_fence {
 	spinlock_t *lock;
