@@ -41,3 +41,4 @@ CFLAGS+= ${KCONFIG:C/(.*)/-DCONFIG_\1/}
 
 CWARNFLAGS.dma-buf.c+=	-Wno-pointer-arith
 CWARNFLAGS.dma-fence-unwrap.c+=	-Wno-cast-qual
+CWARNFLAGS.sync_file.c+=	-Wno-format
