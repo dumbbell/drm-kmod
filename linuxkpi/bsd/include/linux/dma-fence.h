@@ -137,17 +137,8 @@ dma_fence_is_container(struct dma_fence *fence)
 	return (dma_fence_is_array(fence) || dma_fence_is_chain(fence));
 }
 
-static inline const char *
-dma_fence_driver_name(struct dma_fence *fence)
-{
-	return (fence->ops->get_driver_name(fence));
-}
-
-static inline const char *
-dma_fence_timeline_name(struct dma_fence *fence)
-{
-	return (fence->ops->get_timeline_name(fence));
-}
+const char *dma_fence_driver_name(struct dma_fence *fence);
+const char *dma_fence_timeline_name(struct dma_fence *fence);
 
 #define	dma_fence_begin_signalling() true
 #define	dma_fence_end_signalling(cookie) do { (void)cookie; } while (0)

@@ -211,6 +211,15 @@ dma_fence_release(struct kref *kref)
 	struct dma_fence *fence;
 
 	fence = container_of(kref, struct dma_fence, refcount);
+
+	if (!list_empty(&fence->cb_list) &&
+	    !test_bit(DMA_FENCE_FLAG_SIGNALED_BIT, &fence->flags)) {
+		spin_lock(fence->lock);
+		fence->error = -EDEADLK;
+		dma_fence_signal_locked(fence);
+		spin_unlock(fence->lock);
+	}
+
 	if (fence->ops && fence->ops->release)
 		fence->ops->release(fence);
 	else
@@ -466,11 +475,21 @@ dma_fence_set_deadline(struct dma_fence *fence, ktime_t deadline)
 void
 dma_fence_describe(struct dma_fence *fence, struct seq_file *seq)
 {
+	const char __rcu *timeline;
+	const char __rcu *driver;
+
+	rcu_read_lock();
+
+	timeline = dma_fence_timeline_name(fence);
+	driver = dma_fence_driver_name(fence);
+
 	seq_printf(seq, "%s %s seq %llu %ssignalled\n",
-		   dma_fence_driver_name(fence),
-		   dma_fence_timeline_name(fence),
+		   rcu_dereference(driver),
+		   rcu_dereference(timeline),
 		   fence->seqno,
 		   dma_fence_is_signaled(fence) ? "" : "un");
+
+	rcu_read_unlock();
 }
 
 static void
@@ -690,4 +709,22 @@ dma_fence_wait(struct dma_fence *fence, bool intr)
 	ret = dma_fence_wait_timeout(fence, intr, MAX_SCHEDULE_TIMEOUT);
 
 	return (ret < 0 ? ret : 0);
+}
+
+const char *
+dma_fence_driver_name(struct dma_fence *fence)
+{
+	if (!test_bit(DMA_FENCE_FLAG_SIGNALED_BIT, &fence->flags))
+		return (fence->ops->get_driver_name(fence));
+	else
+		return ("detached-driver");
+}
+
+const char *
+dma_fence_timeline_name(struct dma_fence *fence)
+{
+	if (!test_bit(DMA_FENCE_FLAG_SIGNALED_BIT, &fence->flags))
+		return (fence->ops->get_timeline_name(fence));
+	else
+		return ("signaled-timeline");
 }
