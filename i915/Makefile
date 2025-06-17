@@ -53,7 +53,6 @@ SRCS=	\
 	i9xx_display_sr.c \
 	intel_acpi.c \
 	intel_atomic.c \
-	intel_atomic_plane.c \
 	intel_audio.c \
 	intel_bo.c \
 	intel_bw.c \
@@ -84,6 +83,7 @@ SRCS=	\
 	intel_opregion.c \
 	intel_overlay.c \
 	intel_pcode.c \
+	intel_plane.c \
 	intel_psr.c \
 	intel_quirks.c \
 	intel_region_ttm.c \
