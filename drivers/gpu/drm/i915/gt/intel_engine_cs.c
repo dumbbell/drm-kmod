@@ -2090,12 +2090,10 @@ static void linux_hexdump(struct drm_printer *m, const void *buf, size_t len)
 			continue;
 		}
 
-#ifdef __linux__
 		WARN_ON_ONCE(hex_dump_to_buffer(buf + pos, len - pos,
 						rowsize, sizeof(u32),
 						line, sizeof(line),
 						false) >= sizeof(line));
-#endif
 		drm_printf(m, "[%04zx] %s\n", pos, line);
 
 		prev = buf + pos;
@@ -2473,11 +2471,7 @@ void intel_engine_dump(struct intel_engine_cs *engine,
 	intel_execlists_show_requests(engine, m, i915_request_show, 8);
 
 	drm_printf(m, "HWSP:\n");
-#ifdef __linux__
 	hexdump(m, engine->status_page.addr, PAGE_SIZE);
-#elif defined(__FreeBSD__)
-	linux_hexdump(m, engine->status_page.addr, PAGE_SIZE);
-#endif
 
 	drm_printf(m, "Idle? %s\n", str_yes_no(intel_engine_is_idle(engine)));
 
