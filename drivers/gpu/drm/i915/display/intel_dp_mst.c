@@ -201,7 +201,7 @@ static int intel_dp_mst_dsc_get_slice_count(const struct intel_connector *connec
 {
 	const struct drm_display_mode *adjusted_mode =
 		&crtc_state->hw.adjusted_mode;
-	int num_joined_pipes = crtc_state->joiner_pipes;
+	int num_joined_pipes = intel_crtc_num_joined_pipes(crtc_state);
 
 	return intel_dp_dsc_get_slice_count(connector,
 					    adjusted_mode->clock,
@@ -1718,16 +1718,6 @@ mst_topology_add_connector(struct drm_dp_mst_topology_mgr *mgr,
 	drm_dp_mst_get_port_malloc(port);
 
 	intel_dp_init_modeset_retry_work(intel_connector);
-
-	/*
-	 * TODO: The following drm_connector specific initialization belongs
-	 * to DRM core, however it happens atm too late in
-	 * drm_connector_init(). That function will also expose the connector
-	 * to in-kernel users, so it can't be called until the connector is
-	 * sufficiently initialized; init the device pointer used by the
-	 * following DSC setup, until a fix moving this to DRM core.
-	 */
-	intel_connector->base.dev = mgr->dev;
 
 	ret = drm_connector_dynamic_init(display->drm, connector, &mst_connector_funcs,
 					 DRM_MODE_CONNECTOR_DisplayPort, NULL);
